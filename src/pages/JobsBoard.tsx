@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { dummyJobs } from "../data";
 import JobTable from "../components/JobCard";
+import { useGetMeQuery } from "../services/crmApi";
 
 const JobsBoard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -98,6 +99,9 @@ const JobsBoard: React.FC = () => {
       count: statusCounts["Paid"] || 0,
     },
   ];
+
+  const { data: getData, isLoading: isLoadingGetMe } = useGetMeQuery();
+  console.log("🚀 ~ getData:", getData);
 
   if (isLoading) {
     return (

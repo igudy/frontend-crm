@@ -94,16 +94,6 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Table Header */}
-      <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Jobs</h3>
-          <div className="text-sm text-slate-600">
-            {safeJobs.length} {safeJobs.length === 1 ? "job" : "jobs"} total
-          </div>
-        </div>
-      </div>
-
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">

@@ -12,10 +12,11 @@ export const crmApi = createApi({
   }),
   tagTypes: ["User", "Jobs", "Messages"],
   endpoints: (builder) => ({
-    getMe: builder.query({
+    getMe: builder.query<any, void>({
       query: () => "auth/me",
       providesTags: ["User"],
     }),
+
     login: builder.mutation({
       query: (credentials) => ({
         url: "auth/login",

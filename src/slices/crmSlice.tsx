@@ -7,7 +7,7 @@ const initialState = {
 };
 
 const crmSlice = createSlice({
-  name: "auth",
+  name: "crm",
   initialState,
   reducers: {
     setCredentials(state, action) {
