@@ -1,8 +1,25 @@
 import React, { useState, useEffect } from "react";
 import JobCard from "../components/JobCard";
 import type { Job, JobStatus } from "../types";
-import { Filter, Search, Grid, List, Plus } from "lucide-react";
+import {
+  Filter,
+  Search,
+  Grid,
+  List,
+  Plus,
+  TrendingUp,
+  Minus,
+  TrendingDown,
+  Clock,
+  Calendar,
+  CheckCircle,
+  FileText,
+  CreditCard,
+  Briefcase,
+  ArrowRight,
+} from "lucide-react";
 import { dummyJobs } from "../data";
+import JobTable from "../components/JobCard";
 
 const JobsBoard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -111,35 +128,142 @@ const JobsBoard: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-600">
-              Total Jobs
-            </span>
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">
-            {jobs.length}
-          </p>
-        </div>
-        {columns.map((column) => (
-          <div
-            key={column.status}
-            className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
-            onClick={() => setFilter(column.status)}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">
-                {column.title}
-              </span>
-              <div className={`w-2 h-2 ${column.color} rounded-full`}></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-3">
+        {/* Total Jobs Card */}
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer">
+          <div className="flex items-center justify-between mb-2">
+            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow">
+              <Briefcase className="w-5 h-5 text-white" />
             </div>
-            <p className="text-2xl font-bold text-slate-900 mt-2">
-              {column.count}
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded-full">
+                <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-[11px] font-medium text-green-600">
+                  +12%
+                </span>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium text-slate-600">Total Jobs</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {jobs.length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-slate-100">
+            <p className="text-[11px] text-slate-500">
+              All active and completed jobs
             </p>
           </div>
-        ))}
+        </div>
+
+        {/* Status Cards */}
+        {columns.map((column) => {
+          const getIcon = (status: string) => {
+            switch (status) {
+              case "New":
+                return <Clock className="w-5 h-5 text-blue-600" />;
+              case "Scheduled":
+                return <Calendar className="w-5 h-5 text-amber-600" />;
+              case "Done":
+                return <CheckCircle className="w-5 h-5 text-emerald-600" />;
+              case "Invoiced":
+                return <FileText className="w-5 h-5 text-purple-600" />;
+              case "Paid":
+                return <CreditCard className="w-5 h-5 text-slate-600" />;
+              default:
+                return <Briefcase className="w-5 h-5 text-slate-600" />;
+            }
+          };
+
+          const getTrend = (status: string) => {
+            const trends = {
+              New: {
+                icon: TrendingUp,
+                color: "text-green-600",
+                bg: "bg-green-50",
+                value: "+8%",
+              },
+              Scheduled: {
+                icon: TrendingUp,
+                color: "text-green-600",
+                bg: "bg-green-50",
+                value: "+15%",
+              },
+              Done: {
+                icon: TrendingDown,
+                color: "text-red-600",
+                bg: "bg-red-50",
+                value: "-3%",
+              },
+              Invoiced: {
+                icon: TrendingUp,
+                color: "text-green-600",
+                bg: "bg-green-50",
+                value: "+22%",
+              },
+              Paid: {
+                icon: TrendingUp,
+                color: "text-green-600",
+                bg: "bg-green-50",
+                value: "+5%",
+              },
+            };
+            return (
+              trends[status as keyof typeof trends] || {
+                icon: Minus,
+                color: "text-slate-600",
+                bg: "bg-slate-50",
+                value: "0%",
+              }
+            );
+          };
+
+          const TrendIcon = getTrend(column.status).icon;
+          const trend = getTrend(column.status);
+
+          return (
+            <div
+              key={column.status}
+              className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer hover:border-slate-300"
+              onClick={() => setFilter(column.status)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div
+                  className={`p-2.5 ${column.color
+                    .replace("bg-", "bg-")
+                    .replace("500", "100")} rounded-lg`}
+                >
+                  {getIcon(column.status)}
+                </div>
+                <div className="flex flex-col items-end gap-0.5">
+                  <div
+                    className={`flex items-center gap-1 ${trend.bg} px-1.5 py-0.5 rounded-full`}
+                  >
+                    <TrendIcon className={`w-3.5 h-3.5 ${trend.color}`} />
+                    <span className={`text-[11px] font-medium ${trend.color}`}>
+                      {trend.value}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-slate-600">
+                      {column.title}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {column.count}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-slate-500">Click to view</p>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1 transition-all duration-200" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Filters and Search */}
@@ -204,54 +328,36 @@ const JobsBoard: React.FC = () => {
 
         {/* Status Filter Chips */}
         <div className="flex flex-wrap gap-2 mt-4">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-              filter === "all"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-          >
-            All Jobs
-          </button>
-          {columns.map((column) => (
+          <div className="flex flex-wrap gap-2 mt-4">
             <button
-              key={column.status}
-              onClick={() => setFilter(column.status)}
+              onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                filter === column.status
-                  ? "text-white shadow-sm"
+                filter === "all"
+                  ? "bg-blue-600 text-white shadow-sm"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
-              style={{
-                backgroundColor:
-                  filter === column.status
-                    ? getComputedStyle(
-                        document.documentElement
-                      ).getPropertyValue(
-                        `--color-${column.color.split("-")[1]}-500`
-                      ) || column.color
-                    : "",
-              }}
             >
-              {column.title} ({column.count})
+              All Jobs
             </button>
-          ))}
+
+            {columns.map((column) => (
+              <button
+                key={column.status}
+                onClick={() => setFilter(column.status)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  filter === column.status
+                    ? `${column.color} text-white shadow-sm`
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {column.title} ({column.count})
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Jobs Grid/List */}
-      <div
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-            : "grid grid-cols-1 gap-4"
-        }
-      >
-        {filteredJobs.map((job) => (
-          <JobCard key={job.id} job={job} viewMode={viewMode} />
-        ))}
-      </div>
+      <JobTable jobs={filteredJobs} />
 
       {/* Empty State */}
       {filteredJobs.length === 0 && (
