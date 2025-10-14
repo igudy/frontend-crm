@@ -4,6 +4,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import { ArrowLeft, Briefcase, User, Plus, Calendar } from "lucide-react";
 
 const jobSchema = yup.object({
   title: yup.string().required("Title is required"),
@@ -14,10 +15,11 @@ const jobSchema = yup.object({
 const CreateJob = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(jobSchema),
   });
@@ -28,20 +30,15 @@ const CreateJob = () => {
 
   const loadCustomers = async () => {
     try {
-      const response = await api.get("/jobs");
-      const customerSet = new Set();
-      response.data.forEach((job) => {
-        if (job.customer) {
-          customerSet.add(JSON.stringify(job.customer));
-        }
-      });
-      setCustomers(Array.from(customerSet).map((str) => JSON.parse(str)));
+      console.log("Loading customers...");
     } catch (error) {
       console.error("Failed to load customers:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: any) => {
     try {
       await api.post("/jobs", data);
       navigate("/");
@@ -53,82 +50,185 @@ const CreateJob = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          Create New Job
-        </h1>
+      {/* Header Section */}
+      <div className="mb-8">
+        <button
+          onClick={() => navigate("/")}
+          className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-200 mb-4 group"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
+          Back to Jobs Board
+        </button>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+            <Briefcase className="w-6 h-6 text-white" />
+          </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Job Title
+            <h1 className="text-3xl font-bold text-slate-900">
+              Create New Job
+            </h1>
+            <p className="text-slate-600 mt-1">
+              Set up a new job for your customer
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-8 py-6 border-b border-slate-100">
+          <div className="flex items-center space-x-3">
+            <Plus className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-slate-900">
+              Job Details
+            </h2>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
+          {/* Job Title Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Job Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               {...register("title")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={`block w-full px-4 py-3 rounded-lg border ${
+                errors.title
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : "border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+              } shadow-sm transition-all duration-200 focus:ring-2 focus:ring-opacity-20`}
+              placeholder="Enter job title (e.g., Website Redesign, Plumbing Repair)"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="text-sm text-red-600 flex items-center mt-1">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
                 {errors.title.message}
               </p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Description
+          {/* Description Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Description <span className="text-red-500">*</span>
             </label>
             <textarea
-              rows={4}
+              rows={5}
               {...register("description")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={`block w-full px-4 py-3 rounded-lg border ${
+                errors.description
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                  : "border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+              } shadow-sm transition-all duration-200 focus:ring-2 focus:ring-opacity-20 resize-none`}
+              placeholder="Describe the job requirements, scope, and any special instructions..."
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="text-sm text-red-600 flex items-center mt-1">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
                 {errors.description.message}
               </p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Customer
+          {/* Customer Selection Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Customer <span className="text-red-500">*</span>
             </label>
-            <select
-              {...register("customerId")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="">Select a customer</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.email}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                {...register("customerId")}
+                className={`block w-full px-4 py-3 rounded-lg border appearance-none ${
+                  errors.customerId
+                    ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                    : "border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                } shadow-sm transition-all duration-200 focus:ring-2 focus:ring-opacity-20 bg-white`}
+                disabled={isLoading}
+              >
+                <option value="">Select a customer</option>
+                {customers.map((customer: any) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name} - {customer.email}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <User className="w-4 h-4" />
+              </div>
+            </div>
             {errors.customerId && (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="text-sm text-red-600 flex items-center mt-1">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
                 {errors.customerId.message}
+              </p>
+            )}
+            {isLoading && (
+              <p className="text-sm text-slate-500 flex items-center mt-1">
+                <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                Loading customers...
+              </p>
+            )}
+            {customers.length === 0 && !isLoading && (
+              <p className="text-sm text-amber-600 flex items-center mt-1">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2"></span>
+                No customers found. Please create a customer first.
               </p>
             )}
           </div>
 
-          <div className="flex justify-end space-x-3">
+          {/* Additional Info */}
+          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+            <div className="flex items-start space-x-3">
+              <Calendar className="w-4 h-4 text-slate-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-slate-700">Job Status</p>
+                <p className="text-sm text-slate-600 mt-1">
+                  New jobs are automatically set to "Pending" status. You can
+                  update the status later from the jobs board.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+              className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-200 hover:border-slate-400"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700"
+              disabled={isSubmitting || customers.length === 0}
+              className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-600 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-700 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Create Job
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Job
+                </>
+              )}
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Help Text */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-slate-500">
+          All fields marked with <span className="text-red-500">*</span> are
+          required
+        </p>
       </div>
     </div>
   );
