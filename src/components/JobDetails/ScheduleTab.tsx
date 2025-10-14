@@ -36,13 +36,12 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ job, onUpdate }) => {
   const [scheduleAppointment, { isLoading: isScheduling }] =
     useScheduleAppointmentMutation();
 
-  // Fetch technicians from API
   const {
     data: techniciansResponse,
     isLoading: isLoadingTechnicians,
     error: techniciansError,
   } = useGetTechniciansQuery({
-    limit: 50, // Fetch all technicians
+    limit: 50,
     page: 1,
   });
 

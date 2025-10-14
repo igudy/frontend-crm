@@ -51,7 +51,6 @@ interface JobsResponse {
   limit: number;
 }
 
-// Helper function to format status for display
 const formatStatus = (status: JobStatus): string => {
   const statusMap: Record<JobStatus, string> = {
     new: "New",
@@ -80,7 +79,6 @@ const JobsBoard: React.FC = () => {
     status: filter === "all" ? undefined : filter,
   });
 
-  // Transform API data to match your Job type
   const jobs: Job[] = React.useMemo(() => {
     if (!jobsResponse?.data) return [];
 
@@ -101,7 +99,6 @@ const JobsBoard: React.FC = () => {
     }));
   }, [jobsResponse]);
 
-  // Filter jobs based on search term
   const filteredJobs = jobs.filter(
     (job) =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +106,6 @@ const JobsBoard: React.FC = () => {
       job.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate status counts
   const statusCounts = jobs.reduce((acc, job) => {
     acc[job.status] = (acc[job.status] || 0) + 1;
     return acc;

@@ -45,11 +45,9 @@ const CustomersBoard: React.FC = () => {
     page: 1,
   });
 
-  // Fix: Ensure customers is always an array
   const customers = customersResponse?.data || [];
   console.log("🚀 ~ CustomersBoard ~ customers:", customers);
 
-  // Filter customers based on search term
   const filteredCustomers = customers.filter(
     (customer: Customer) =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,7 +56,6 @@ const CustomersBoard: React.FC = () => {
       customer.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate stats
   const totalCustomers = customers.length;
 
   if (customersLoading) {

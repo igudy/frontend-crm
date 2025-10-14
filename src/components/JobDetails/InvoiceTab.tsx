@@ -48,10 +48,7 @@ const InvoiceTab: React.FC<InvoiceTabProps> = ({ job, onUpdate }) => {
   const [createInvoice, { isLoading: isCreatingInvoice }] =
     useCreateInvoiceMutation();
 
-  // Store the created invoice ID
   const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
-
-  // Fetch the invoice data if we have an invoice ID
   const { data: invoiceResponse } = useGetInvoiceQuery(createdInvoiceId!, {
     skip: !createdInvoiceId,
   });
@@ -80,7 +77,6 @@ const InvoiceTab: React.FC<InvoiceTabProps> = ({ job, onUpdate }) => {
     name: "items",
   });
 
-  // Watch all form values to calculate totals
   const watchedItems = watch("items");
   const watchedTax = watch("tax");
 

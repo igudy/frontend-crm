@@ -1,10 +1,9 @@
-// StatusTimeline.tsx
 import React from "react";
 import type { JobStatus } from "../types";
 
 interface StatusTimelineProps {
   currentStatus: JobStatus;
-  job?: any; // Add job prop to detect changes
+  job?: any;
 }
 
 const StatusTimeline: React.FC<StatusTimelineProps> = ({

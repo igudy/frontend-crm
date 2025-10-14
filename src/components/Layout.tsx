@@ -1,4 +1,3 @@
-// components/Layout.tsx
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { Briefcase, Users, Plus, ChevronRight } from "lucide-react";
