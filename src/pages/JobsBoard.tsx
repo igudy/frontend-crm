@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import JobCard from "../components/JobCard";
 import type { Job, JobStatus } from "../types";
 import {
   Filter,
@@ -17,44 +16,92 @@ import {
   CreditCard,
   Briefcase,
   ArrowRight,
+  PlayCircle,
 } from "lucide-react";
-import { dummyJobs } from "../data";
+import { Link, useNavigate } from "react-router-dom";
 import JobTable from "../components/JobCard";
-import { useGetMeQuery } from "../services/crmApi";
+import { useGetJobsQuery } from "../services/crmApi";
+
+interface ApiJob {
+  _id: string;
+  customer: {
+    _id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+  status: JobStatus;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface JobsResponse {
+  success: boolean;
+  message: string;
+  data: ApiJob[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Helper function to format status for display
+const formatStatus = (status: JobStatus): string => {
+  const statusMap: Record<JobStatus, string> = {
+    new: "New",
+    in_progress: "In Progress",
+    scheduled: "Scheduled",
+    done: "Completed",
+    invoiced: "Invoiced",
+    paid: "Paid",
+  };
+  return statusMap[status] || status;
+};
 
 const JobsBoard: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<"all" | JobStatus>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadJobs();
-  }, [filter]);
+  const {
+    data: jobsResponse,
+    isLoading: jobsLoading,
+    error: jobsError,
+  } = useGetJobsQuery({
+    limit: 100,
+    page: 1,
+    status: filter === "all" ? undefined : filter,
+  });
 
-  const loadJobs = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      // Simulate API call delay
-      //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Transform API data to match your Job type
+  const jobs: Job[] = React.useMemo(() => {
+    if (!jobsResponse?.data) return [];
 
-      const url = filter === "all" ? "/jobs" : `/jobs?status=${filter}`;
-      let filteredJobs = dummyJobs;
-      if (filter !== "all") {
-        filteredJobs = dummyJobs.filter((job: any) => job.status === filter);
-      }
+    return jobsResponse.data.map((apiJob: ApiJob) => ({
+      id: apiJob._id,
+      title: apiJob.title || "N/A",
+      description: apiJob.description || "N/A",
+      status: apiJob.status,
+      customer: {
+        id: apiJob.customer._id,
+        name: apiJob.customer.name || "N/A",
+        email: apiJob.customer.email || "N/A",
+        phone: apiJob.customer.phone || "N/A",
+        address: apiJob.customer.address || "N/A",
+      },
+      createdAt: apiJob.createdAt || new Date().toISOString(),
+      updatedAt: apiJob.updatedAt || new Date().toISOString(),
+    }));
+  }, [jobsResponse]);
 
-      setJobs(filteredJobs);
-    } catch (error) {
-      console.error("Failed to load jobs:", error);
-      // Fallback to dummy data on error
-      setJobs(dummyJobs);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Filter jobs based on search term
   const filteredJobs = jobs.filter(
     (job) =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,6 +109,7 @@ const JobsBoard: React.FC = () => {
       job.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Calculate status counts
   const statusCounts = jobs.reduce((acc, job) => {
     acc[job.status] = (acc[job.status] || 0) + 1;
     return acc;
@@ -69,46 +117,135 @@ const JobsBoard: React.FC = () => {
 
   const columns = [
     {
-      status: "New" as JobStatus,
+      status: "new" as JobStatus,
       title: "New",
       color: "bg-blue-500",
-      count: statusCounts["New"] || 0,
+      count: statusCounts["new"] || 0,
     },
     {
-      status: "Scheduled" as JobStatus,
+      status: "scheduled" as JobStatus,
       title: "Scheduled",
       color: "bg-amber-500",
-      count: statusCounts["Scheduled"] || 0,
+      count: statusCounts["scheduled"] || 0,
     },
     {
-      status: "Done" as JobStatus,
+      status: "in_progress" as JobStatus,
+      title: "In Progress",
+      color: "bg-orange-500",
+      count: statusCounts["in_progress"] || 0,
+    },
+    {
+      status: "done" as JobStatus,
       title: "Completed",
       color: "bg-emerald-500",
-      count: statusCounts["Done"] || 0,
+      count: statusCounts["done"] || 0,
     },
     {
-      status: "Invoiced" as JobStatus,
+      status: "invoiced" as JobStatus,
       title: "Invoiced",
       color: "bg-purple-500",
-      count: statusCounts["Invoiced"] || 0,
+      count: statusCounts["invoiced"] || 0,
     },
     {
-      status: "Paid" as JobStatus,
+      status: "paid" as JobStatus,
       title: "Paid",
       color: "bg-slate-500",
-      count: statusCounts["Paid"] || 0,
+      count: statusCounts["paid"] || 0,
     },
   ];
 
-  const { data: getData, isLoading: isLoadingGetMe } = useGetMeQuery();
-  console.log("🚀 ~ getData:", getData);
+  const getIcon = (status: JobStatus) => {
+    switch (status) {
+      case "new":
+        return <Clock className="w-5 h-5 text-blue-600" />;
+      case "scheduled":
+        return <Calendar className="w-5 h-5 text-amber-600" />;
+      case "in_progress":
+        return <PlayCircle className="w-5 h-5 text-orange-600" />;
+      case "done":
+        return <CheckCircle className="w-5 h-5 text-emerald-600" />;
+      case "invoiced":
+        return <FileText className="w-5 h-5 text-purple-600" />;
+      case "paid":
+        return <CreditCard className="w-5 h-5 text-slate-600" />;
+      default:
+        return <Briefcase className="w-5 h-5 text-slate-600" />;
+    }
+  };
 
-  if (isLoading) {
+  const getTrend = (status: JobStatus) => {
+    const trends = {
+      new: {
+        icon: TrendingUp,
+        color: "text-green-600",
+        bg: "bg-green-50",
+        value: "+8%",
+      },
+      scheduled: {
+        icon: TrendingUp,
+        color: "text-green-600",
+        bg: "bg-green-50",
+        value: "+15%",
+      },
+      in_progress: {
+        icon: TrendingUp,
+        color: "text-green-600",
+        bg: "bg-green-50",
+        value: "+12%",
+      },
+      done: {
+        icon: TrendingDown,
+        color: "text-red-600",
+        bg: "bg-red-50",
+        value: "-3%",
+      },
+      invoiced: {
+        icon: TrendingUp,
+        color: "text-green-600",
+        bg: "bg-green-50",
+        value: "+22%",
+      },
+      paid: {
+        icon: TrendingUp,
+        color: "text-green-600",
+        bg: "bg-green-50",
+        value: "+5%",
+      },
+    };
+    return (
+      trends[status] || {
+        icon: Minus,
+        color: "text-slate-600",
+        bg: "bg-slate-50",
+        value: "0%",
+      }
+    );
+  };
+
+  if (jobsLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-600">Loading jobs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jobsError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 mb-2">
+            Failed to load jobs
+          </h3>
+          <p className="text-slate-600 max-w-md mx-auto">
+            There was an error loading the jobs. Please try again later.
+          </p>
         </div>
       </div>
     );
@@ -124,15 +261,18 @@ const JobsBoard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md transition-all duration-200">
+          <Link
+            to="/jobs/new"
+            className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md transition-all duration-200"
+          >
             <Plus className="w-4 h-4 mr-2" />
             New Job
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-7 gap-3">
         {/* Total Jobs Card */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer">
           <div className="flex items-center justify-between mb-2">
@@ -163,66 +303,6 @@ const JobsBoard: React.FC = () => {
 
         {/* Status Cards */}
         {columns.map((column) => {
-          const getIcon = (status: string) => {
-            switch (status) {
-              case "New":
-                return <Clock className="w-5 h-5 text-blue-600" />;
-              case "Scheduled":
-                return <Calendar className="w-5 h-5 text-amber-600" />;
-              case "Done":
-                return <CheckCircle className="w-5 h-5 text-emerald-600" />;
-              case "Invoiced":
-                return <FileText className="w-5 h-5 text-purple-600" />;
-              case "Paid":
-                return <CreditCard className="w-5 h-5 text-slate-600" />;
-              default:
-                return <Briefcase className="w-5 h-5 text-slate-600" />;
-            }
-          };
-
-          const getTrend = (status: string) => {
-            const trends = {
-              New: {
-                icon: TrendingUp,
-                color: "text-green-600",
-                bg: "bg-green-50",
-                value: "+8%",
-              },
-              Scheduled: {
-                icon: TrendingUp,
-                color: "text-green-600",
-                bg: "bg-green-50",
-                value: "+15%",
-              },
-              Done: {
-                icon: TrendingDown,
-                color: "text-red-600",
-                bg: "bg-red-50",
-                value: "-3%",
-              },
-              Invoiced: {
-                icon: TrendingUp,
-                color: "text-green-600",
-                bg: "bg-green-50",
-                value: "+22%",
-              },
-              Paid: {
-                icon: TrendingUp,
-                color: "text-green-600",
-                bg: "bg-green-50",
-                value: "+5%",
-              },
-            };
-            return (
-              trends[status as keyof typeof trends] || {
-                icon: Minus,
-                color: "text-slate-600",
-                bg: "bg-slate-50",
-                value: "0%",
-              }
-            );
-          };
-
           const TrendIcon = getTrend(column.status).icon;
           const trend = getTrend(column.status);
 
@@ -332,39 +412,37 @@ const JobsBoard: React.FC = () => {
 
         {/* Status Filter Chips */}
         <div className="flex flex-wrap gap-2 mt-4">
-          <div className="flex flex-wrap gap-2 mt-4">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              filter === "all"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            All Jobs
+          </button>
+
+          {columns.map((column) => (
             <button
-              onClick={() => setFilter("all")}
+              key={column.status}
+              onClick={() => setFilter(column.status)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                filter === "all"
-                  ? "bg-blue-600 text-white shadow-sm"
+                filter === column.status
+                  ? `${column.color} text-white shadow-sm`
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              All Jobs
+              {column.title} ({column.count})
             </button>
-
-            {columns.map((column) => (
-              <button
-                key={column.status}
-                onClick={() => setFilter(column.status)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  filter === column.status
-                    ? `${column.color} text-white shadow-sm`
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                {column.title} ({column.count})
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
       <JobTable jobs={filteredJobs} />
 
       {/* Empty State */}
-      {filteredJobs.length === 0 && (
+      {filteredJobs.length === 0 && !jobsLoading && (
         <div className="text-center py-12">
           <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Filter className="w-8 h-8 text-slate-400" />
@@ -375,7 +453,9 @@ const JobsBoard: React.FC = () => {
           <p className="text-slate-600 max-w-md mx-auto">
             {searchTerm
               ? `No jobs match "${searchTerm}". Try adjusting your search terms.`
-              : `No jobs found with the status "${filter}".`}
+              : `No jobs found with the status "${formatStatus(
+                  filter as JobStatus
+                )}".`}
           </p>
         </div>
       )}

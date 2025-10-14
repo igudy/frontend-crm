@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
-import type { CreateCustomerData } from "../types";
+import { toast } from "react-toastify";
 import { ArrowLeft, UserPlus, Building } from "lucide-react";
+import { useCreateCustomerMutation } from "../services/crmApi";
 
 const customerSchema = yup.object({
   name: yup.string().required("Name is required"),
@@ -18,21 +18,33 @@ type CustomerFormData = yup.InferType<typeof customerSchema>;
 
 const CreateCustomer: React.FC = () => {
   const navigate = useNavigate();
+  const [createCustomer, { isLoading: isCreatingCustomer }] =
+    useCreateCustomerMutation();
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CustomerFormData>({
     resolver: yupResolver(customerSchema),
   });
 
   const onSubmit = async (data: CustomerFormData): Promise<void> => {
     try {
-      await api.post<CreateCustomerData>("/customers", data);
+      await createCustomer(data).unwrap();
+
+      toast.success("Customer created successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
       navigate("/");
-    } catch (error) {
-      console.error("Failed to create customer:", error);
-      alert("Failed to create customer");
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || "Failed to create customer";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+      });
     }
   };
 
@@ -178,10 +190,10 @@ const CreateCustomer: React.FC = () => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isCreatingCustomer}
               className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              {isSubmitting ? (
+              {isCreatingCustomer ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Creating...

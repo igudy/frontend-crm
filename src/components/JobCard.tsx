@@ -17,7 +17,6 @@ interface JobTableProps {
 }
 
 const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
-  // Safe status configuration with fallbacks
   const statusConfig: Record<
     string,
     { color: string; bg: string; dot: string }
@@ -41,7 +40,6 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
     Paid: { color: "text-slate-700", bg: "bg-slate-50", dot: "bg-slate-500" },
   };
 
-  // Safe date formatting with fallback
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";
     try {
@@ -70,7 +68,6 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
     }
   };
 
-  // Safe data access with fallbacks
   const safeJobs = jobs.map((job) => ({
     id: job?.id || "unknown",
     title: job?.title || "Untitled Job",
@@ -210,20 +207,14 @@ const JobTable: React.FC<JobTableProps> = ({ jobs }) => {
 
                   {/* Actions */}
                   <td className="px-6 py-4">
-                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex items-center text-sm justify-end space-x-2 duration-200">
                       <Link
                         to={`/jobs/${job.id}`}
                         className="inline-flex items-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         title="View Details"
                       >
-                        <Eye className="w-4 h-4" />
+                        View Details
                       </Link>
-                      <button
-                        className="inline-flex items-center p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all duration-200"
-                        title="More options"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
                     </div>
                   </td>
                 </tr>

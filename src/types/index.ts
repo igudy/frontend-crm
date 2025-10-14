@@ -46,7 +46,13 @@ export interface Invoice {
   updatedAt: string;
 }
 
-export type JobStatus = "New" | "Scheduled" | "Done" | "Invoiced" | "Paid";
+export type JobStatus =
+  | "new"
+  | "in_progress"
+  | "scheduled"
+  | "done"
+  | "invoiced"
+  | "paid";
 
 export interface Job {
   id: string;

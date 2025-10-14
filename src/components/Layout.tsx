@@ -1,3 +1,4 @@
+// components/Layout.tsx
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { Briefcase, Users, Plus, ChevronRight } from "lucide-react";
@@ -7,15 +8,21 @@ const Layout: React.FC = () => {
 
   const navigation = [
     { name: "Jobs Board", href: "/", icon: Briefcase },
-    { name: "Customers", href: "/customers/new", icon: Users },
+    { name: "Customers", href: "/customers", icon: Users },
   ];
 
   const getPageTitle = () => {
     if (location.pathname === "/") return "Jobs Board";
+    if (location.pathname === "/customers") return "Customers";
     if (location.pathname.startsWith("/jobs/")) return "Job Details";
-    if (location.pathname === "/customers/new") return "Customers";
+    if (location.pathname === "/customers/new") return "Create Customer";
     if (location.pathname === "/jobs/new") return "Create Job";
     return "Dashboard";
+  };
+
+  const isActivePath = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -29,7 +36,7 @@ const Layout: React.FC = () => {
         <nav className="mt-8 space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.href;
+            const isActive = isActivePath(item.href);
 
             return (
               <Link

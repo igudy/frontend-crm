@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
+import { toast } from "react-toastify";
 import { ArrowLeft, Briefcase, User, Plus, Calendar } from "lucide-react";
+import { useCreateJobMutation, useGetCustomersQuery } from "../services/crmApi";
 
 const jobSchema = yup.object({
   title: yup.string().required("Title is required"),
@@ -14,37 +15,56 @@ const jobSchema = yup.object({
 
 const CreateJob = () => {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [createJob, { isLoading: isCreatingJob }] = useCreateJobMutation();
+
+  const {
+    data: customersResponse,
+    isLoading: isLoadingCustomers,
+    error: customersError,
+  } = useGetCustomersQuery({
+    limit: 100,
+    page: 1,
+  });
+
+  const customers = customersResponse?.data || customersResponse || [];
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(jobSchema),
   });
 
   useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  const loadCustomers = async () => {
-    try {
-      console.log("Loading customers...");
-    } catch (error) {
-      console.error("Failed to load customers:", error);
-    } finally {
-      setIsLoading(false);
+    if (customersError) {
+      toast.error("Failed to load customers");
+      console.error("Failed to load customers:", customersError);
     }
-  };
+  }, [customersError]);
 
   const onSubmit = async (data: any) => {
     try {
-      await api.post("/jobs", data);
+      const jobData = {
+        customer: data.customerId,
+        title: data.title,
+        description: data.description,
+      };
+
+      await createJob(jobData).unwrap();
+
+      toast.success("Job created successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
       navigate("/");
-    } catch (error) {
-      console.error("Failed to create job:", error);
-      alert("Failed to create job");
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || "Failed to create job";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+      });
     }
   };
 
@@ -146,11 +166,14 @@ const CreateJob = () => {
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                     : "border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                 } shadow-sm transition-all duration-200 focus:ring-2 focus:ring-opacity-20 bg-white`}
-                disabled={isLoading}
+                disabled={isLoadingCustomers}
               >
                 <option value="">Select a customer</option>
                 {customers.map((customer: any) => (
-                  <option key={customer.id} value={customer.id}>
+                  <option
+                    key={customer._id || customer.id}
+                    value={customer._id || customer.id}
+                  >
                     {customer.name} - {customer.email}
                   </option>
                 ))}
@@ -165,13 +188,13 @@ const CreateJob = () => {
                 {errors.customerId.message}
               </p>
             )}
-            {isLoading && (
+            {isLoadingCustomers && (
               <p className="text-sm text-slate-500 flex items-center mt-1">
                 <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></div>
                 Loading customers...
               </p>
             )}
-            {customers.length === 0 && !isLoading && (
+            {customers.length === 0 && !isLoadingCustomers && (
               <p className="text-sm text-amber-600 flex items-center mt-1">
                 <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2"></span>
                 No customers found. Please create a customer first.
@@ -204,10 +227,10 @@ const CreateJob = () => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || customers.length === 0}
+              disabled={isCreatingJob || customers.length === 0}
               className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-600 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-700 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              {isSubmitting ? (
+              {isCreatingJob ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Creating...
